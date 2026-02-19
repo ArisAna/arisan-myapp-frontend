@@ -15,9 +15,14 @@ interface Question {
 
 function QuestionsContent() {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [seedMsg, setSeedMsg] = useState('');
   const [seeding, setSeeding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Filter
+  const [filterCategory, setFilterCategory] = useState('');
 
   // New question form
   const [showForm, setShowForm] = useState(false);
@@ -35,7 +40,7 @@ function QuestionsContent() {
 
   const loadQuestions = async () => {
     try {
-      const data = await api.getQuestions();
+      const data = await api.getQuestions(filterCategory || undefined);
       setQuestions(data.questions);
     } catch (err) {
       console.error('Failed to load questions:', err);
@@ -44,9 +49,23 @@ function QuestionsContent() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const data = await api.getCategories();
+      setCategories(data.categories);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
   useEffect(() => {
+    loadCategories();
     loadQuestions();
   }, []);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [filterCategory]);
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -59,6 +78,20 @@ function QuestionsContent() {
       setSeedMsg(err instanceof Error ? err.message : 'Seed failed');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm('Είσαι σίγουρος ότι θέλεις να διαγράψεις ΟΛΕΣ τις ερωτήσεις;')) return;
+    setDeleting(true);
+    try {
+      const data = await api.deleteAllQuestions();
+      setSeedMsg(data.message);
+      loadQuestions();
+    } catch (err) {
+      setSeedMsg(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -81,7 +114,7 @@ function QuestionsContent() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this question?')) return;
+    if (!confirm('Διαγραφή ερώτησης;')) return;
     try {
       await api.deleteQuestion(id);
       loadQuestions();
@@ -123,27 +156,48 @@ function QuestionsContent() {
     <main className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Questions ({questions.length})</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Ερωτήσεις ({questions.length})</h1>
           <Link href="/admin" className="text-sm text-blue-600 hover:text-blue-500">
             Back to Admin
           </Link>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-wrap gap-3 mb-6">
           <button
             onClick={() => setShowForm(!showForm)}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
-            {showForm ? 'Cancel' : 'Add Question'}
+            {showForm ? 'Ακύρωση' : 'Προσθήκη Ερώτησης'}
           </button>
           <button
             onClick={handleSeed}
             disabled={seeding}
             className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
           >
-            {seeding ? 'Seeding...' : 'Seed Default Questions'}
+            {seeding ? 'Φόρτωση...' : 'Προσθήκη Ερωτήσεων (Seed)'}
           </button>
+          <button
+            onClick={handleDeleteAll}
+            disabled={deleting || questions.length === 0}
+            className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleting ? 'Διαγραφή...' : 'Διαγραφή Όλων'}
+          </button>
+        </div>
+
+        {/* Category filter */}
+        <div className="mb-6">
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
+          >
+            <option value="">Όλες οι κατηγορίες</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
         </div>
 
         {seedMsg && (
@@ -155,18 +209,18 @@ function QuestionsContent() {
           <form onSubmit={handleCreate} className="mb-6 rounded-lg bg-white p-6 shadow-sm border border-gray-200 space-y-4">
             {error && <p className="text-sm text-red-700 bg-red-50 p-2 rounded">{error}</p>}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Question</label>
+              <label className="block text-sm font-medium text-gray-700">Ερώτηση</label>
               <input
                 type="text"
                 required
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
-                placeholder="What is the capital of...?"
+                placeholder="Ποια είναι η πρωτεύουσα...;"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Correct Answer</label>
+              <label className="block text-sm font-medium text-gray-700">Σωστή Απάντηση</label>
               <input
                 type="text"
                 required
@@ -176,21 +230,24 @@ function QuestionsContent() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Category (optional)</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700">Κατηγορία</label>
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
-                placeholder="Geography, Science, etc."
-              />
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 bg-white"
+              >
+                <option value="">Χωρίς κατηγορία</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
             <button
               type="submit"
               disabled={submitting}
               className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {submitting ? 'Creating...' : 'Create Question'}
+              {submitting ? 'Δημιουργία...' : 'Δημιουργία Ερώτησης'}
             </button>
           </form>
         )}
@@ -211,24 +268,28 @@ function QuestionsContent() {
                     onChange={(e) => setEditAnswer(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 text-sm"
                   />
-                  <input
+                  <select
                     value={editCategory}
                     onChange={(e) => setEditCategory(e.target.value)}
-                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 text-sm"
-                    placeholder="Category"
-                  />
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 text-sm bg-white"
+                  >
+                    <option value="">Χωρίς κατηγορία</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(q.id)}
                       className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
                     >
-                      Save
+                      Αποθήκευση
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
                       className="rounded bg-gray-200 px-3 py-1 text-xs text-gray-700 hover:bg-gray-300"
                     >
-                      Cancel
+                      Ακύρωση
                     </button>
                   </div>
                 </div>
@@ -237,7 +298,7 @@ function QuestionsContent() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-medium text-gray-900 text-sm">{q.question_text}</p>
-                      <p className="mt-1 text-sm text-green-700">Answer: {q.correct_answer}</p>
+                      <p className="mt-1 text-sm text-green-700">Απάντηση: {q.correct_answer}</p>
                       {q.category && (
                         <span className="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                           {q.category}
@@ -266,7 +327,7 @@ function QuestionsContent() {
 
           {questions.length === 0 && (
             <p className="text-center text-gray-500 py-8">
-              No questions yet. Click &quot;Seed Default Questions&quot; to add some.
+              Δεν υπάρχουν ερωτήσεις. Πάτα &quot;Προσθήκη Ερωτήσεων (Seed)&quot; για να προσθέσεις.
             </p>
           )}
         </div>

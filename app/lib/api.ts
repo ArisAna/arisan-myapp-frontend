@@ -48,6 +48,7 @@ export const api = {
     fetchAPI('/migrate/game-tables', { method: 'POST' }),
 
   // Questions
+  getCategories: () => fetchAPI('/questions/categories'),
   getQuestions: (category?: string) =>
     fetchAPI(`/questions${category ? `?category=${category}` : ''}`),
   createQuestion: (question_text: string, correct_answer: string, category?: string) =>
@@ -64,4 +65,6 @@ export const api = {
     }),
   deleteQuestion: (id: number) =>
     fetchAPI(`/questions/${id}`, { method: 'DELETE' }),
+  deleteAllQuestions: () =>
+    fetchAPI('/questions', { method: 'DELETE' }),
 };
