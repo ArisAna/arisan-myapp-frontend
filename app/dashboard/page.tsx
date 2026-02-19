@@ -3,6 +3,7 @@
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 function DashboardContent() {
   const { user, logout } = useAuth();
@@ -33,6 +34,15 @@ function DashboardContent() {
             <p><span className="font-medium">User ID:</span> {user?.id}</p>
           </div>
         </div>
+
+        {user?.is_admin && (
+          <Link
+            href="/admin"
+            className="mt-4 block rounded-lg bg-gray-800 p-4 text-white text-center hover:bg-gray-700 transition-colors"
+          >
+            Admin Panel
+          </Link>
+        )}
       </div>
     </main>
   );

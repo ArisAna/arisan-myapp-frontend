@@ -37,4 +37,31 @@ export const api = {
     }),
 
   getMe: () => fetchAPI('/auth/me'),
+
+  // Admin
+  getUsers: () => fetchAPI('/admin/users'),
+  toggleAdmin: (userId: number) =>
+    fetchAPI(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+
+  // Migrations
+  migrateGameTables: () =>
+    fetchAPI('/migrate/game-tables', { method: 'POST' }),
+
+  // Questions
+  getQuestions: (category?: string) =>
+    fetchAPI(`/questions${category ? `?category=${category}` : ''}`),
+  createQuestion: (question_text: string, correct_answer: string, category?: string) =>
+    fetchAPI('/questions', {
+      method: 'POST',
+      body: JSON.stringify({ question_text, correct_answer, category }),
+    }),
+  seedQuestions: () =>
+    fetchAPI('/questions/seed', { method: 'POST' }),
+  updateQuestion: (id: number, data: { question_text?: string; correct_answer?: string; category?: string }) =>
+    fetchAPI(`/questions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteQuestion: (id: number) =>
+    fetchAPI(`/questions/${id}`, { method: 'DELETE' }),
 };
