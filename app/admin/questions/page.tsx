@@ -175,7 +175,7 @@ function QuestionsContent() {
             disabled={seeding}
             className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
           >
-            {seeding ? 'Φόρτωση...' : 'Προσθήκη Ερωτήσεων (Seed)'}
+            {seeding ? 'Δημιουργία με AI...' : 'Δημιουργία 30 Ερωτήσεων (AI)'}
           </button>
           <button
             onClick={handleDeleteAll}
@@ -327,7 +327,7 @@ function QuestionsContent() {
 
           {questions.length === 0 && (
             <p className="text-center text-gray-500 py-8">
-              Δεν υπάρχουν ερωτήσεις. Πάτα &quot;Προσθήκη Ερωτήσεων (Seed)&quot; για να προσθέσεις.
+              Δεν υπάρχουν ερωτήσεις. Πάτα &quot;Δημιουργία 30 Ερωτήσεων (AI)&quot; για να δημιουργήσεις.
             </p>
           )}
         </div>
