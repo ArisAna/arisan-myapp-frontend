@@ -67,4 +67,12 @@ export const api = {
     fetchAPI(`/questions/${id}`, { method: 'DELETE' }),
   deleteAllQuestions: () =>
     fetchAPI('/questions', { method: 'DELETE' }),
+
+  // Games
+  getGames: () => fetchAPI('/games'),
+  getGame: (id: number) => fetchAPI(`/games/${id}`),
+  createGame: () => fetchAPI('/games', { method: 'POST' }),
+  joinGame: (id: number) => fetchAPI(`/games/${id}/join`, { method: 'POST' }),
+  leaveGame: (id: number) => fetchAPI(`/games/${id}/leave`, { method: 'POST' }),
+  startGame: (id: number) => fetchAPI(`/games/${id}/start`, { method: 'POST' }),
 };

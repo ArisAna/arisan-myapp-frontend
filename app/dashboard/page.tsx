@@ -35,10 +35,17 @@ function DashboardContent() {
           </div>
         </div>
 
+        <Link
+          href="/lobby"
+          className="mt-4 block rounded-lg bg-blue-600 p-4 text-white text-center font-semibold hover:bg-blue-700 transition-colors"
+        >
+          🎮 Lobby
+        </Link>
+
         {user?.is_admin && (
           <Link
             href="/admin"
-            className="mt-4 block rounded-lg bg-gray-800 p-4 text-white text-center hover:bg-gray-700 transition-colors"
+            className="mt-3 block rounded-lg bg-gray-800 p-4 text-white text-center hover:bg-gray-700 transition-colors"
           >
             Admin Panel
           </Link>
