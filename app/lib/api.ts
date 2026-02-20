@@ -99,6 +99,8 @@ export const api = {
     fetchAPI(`/games/${gameId}/edit-question/${questionId}`, { method: 'PUT', body: JSON.stringify(data) }),
   seedGameQuestions: (gameId: number) =>
     fetchAPI(`/games/${gameId}/seed-questions`, { method: 'POST' }),
+  spellCheck: (gameId: number, text: string) =>
+    fetchAPI(`/games/${gameId}/spell-check`, { method: 'POST', body: JSON.stringify({ text }) }),
   submitAnswer: (gameId: number, answerText: string) =>
     fetchAPI(`/games/${gameId}/answer`, { method: 'POST', body: JSON.stringify({ answer_text: answerText }) }),
   submitVote: (gameId: number, answerId: number) =>

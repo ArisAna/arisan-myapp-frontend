@@ -363,7 +363,26 @@ function AnsweringPhase({ gameId, round, userId, totalPlayers }: { gameId: numbe
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [suggestion, setSuggestion] = useState('');
+  const [checking, setChecking] = useState(false);
   const isQM = round.question_master_id === userId;
+
+  useEffect(() => {
+    setSuggestion('');
+    if (answer.trim().length < 3) { setChecking(false); return; }
+    setChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const data = await api.spellCheck(gameId, answer);
+        setSuggestion(data.suggestion || '');
+      } catch {
+        // fail silently
+      } finally {
+        setChecking(false);
+      }
+    }, 1500);
+    return () => { clearTimeout(timer); setChecking(false); };
+  }, [answer, gameId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -408,10 +427,27 @@ function AnsweringPhase({ gameId, round, userId, totalPlayers }: { gameId: numbe
               type="text"
               required
               value={answer}
-              onChange={e => setAnswer(e.target.value)}
+              onChange={e => { setAnswer(e.target.value); setSuggestion(''); }}
               placeholder="Γράψε την απάντησή σου..."
               className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {checking && (
+              <p className="mt-1.5 text-xs text-gray-400">Έλεγχος ορθογραφίας...</p>
+            )}
+            {suggestion && !checking && (
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-xs text-amber-800">
+                  ✏️ Εννοούσες: <span className="font-semibold">{suggestion}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setAnswer(suggestion); setSuggestion(''); }}
+                  className="shrink-0 text-xs font-semibold text-amber-700 hover:text-amber-900"
+                >
+                  Αποδοχή
+                </button>
+              </div>
+            )}
           </div>
           <button
             type="submit"
