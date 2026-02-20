@@ -13,6 +13,7 @@ interface Game {
   status: 'lobby' | 'in_progress';
   creator_name: string;
   player_count: number;
+  is_player: boolean;
   created_at: string;
   started_at: string | null;
 }
@@ -23,6 +24,7 @@ function LobbyContent() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const loadGames = useCallback(async () => {
@@ -75,6 +77,20 @@ function LobbyContent() {
       router.push(`/game?id=${gameId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join game');
+    }
+  };
+
+  const handleDelete = async (gameId: number) => {
+    if (!confirm(`Διαγραφή παιχνιδιού #${gameId}; Δεν υπάρχει αναίρεση.`)) return;
+    setDeletingId(gameId);
+    setError('');
+    try {
+      await api.deleteGame(gameId);
+      setGames(prev => prev.filter(g => g.id !== gameId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete game');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -131,22 +147,45 @@ function LobbyContent() {
               {lobbyGames.map(game => (
                 <div
                   key={game.id}
-                  className="rounded-xl bg-white border border-gray-200 p-4 flex items-center justify-between"
+                  className="rounded-xl bg-white border border-gray-200 p-4 flex items-center justify-between gap-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-gray-900">
                       Παιχνίδι #{game.id}
+                      {game.is_player && (
+                        <span className="ml-2 text-xs text-blue-600 font-normal">(μέλος)</span>
+                      )}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Δημιούργησε: {game.creator_name} · {game.player_count} παίκτες
+                      {game.creator_name} · {game.player_count} παίκτες
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleJoin(game.id)}
-                    className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white font-medium hover:bg-green-700 transition-colors"
-                  >
-                    Συμμετοχή
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {user?.is_admin && (
+                      <button
+                        onClick={() => handleDelete(game.id)}
+                        disabled={deletingId === game.id}
+                        className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {deletingId === game.id ? '...' : 'Διαγραφή'}
+                      </button>
+                    )}
+                    {game.is_player ? (
+                      <button
+                        onClick={() => router.push(`/game?id=${game.id}`)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Επιστροφή
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleJoin(game.id)}
+                        className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white font-medium hover:bg-green-700 transition-colors"
+                      >
+                        Συμμετοχή
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -163,17 +202,37 @@ function LobbyContent() {
               {activeGames.map(game => (
                 <div
                   key={game.id}
-                  className="rounded-xl bg-white border border-gray-200 p-4 flex items-center justify-between opacity-75"
+                  className="rounded-xl bg-white border border-gray-200 p-4 flex items-center justify-between gap-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-gray-900">Παιχνίδι #{game.id}</p>
                     <p className="text-sm text-gray-500">
                       {game.creator_name} · {game.player_count} παίκτες · Σε εξέλιξη
                     </p>
                   </div>
-                  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
-                    Σε εξέλιξη
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {user?.is_admin && (
+                      <button
+                        onClick={() => handleDelete(game.id)}
+                        disabled={deletingId === game.id}
+                        className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {deletingId === game.id ? '...' : 'Διαγραφή'}
+                      </button>
+                    )}
+                    {game.is_player ? (
+                      <button
+                        onClick={() => router.push(`/game?id=${game.id}`)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Συνέχεια →
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
+                        Σε εξέλιξη
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

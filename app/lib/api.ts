@@ -75,6 +75,7 @@ export const api = {
   joinGame: (id: number) => fetchAPI(`/games/${id}/join`, { method: 'POST' }),
   leaveGame: (id: number) => fetchAPI(`/games/${id}/leave`, { method: 'POST' }),
   startGame: (id: number) => fetchAPI(`/games/${id}/start`, { method: 'POST' }),
+  deleteGame: (id: number) => fetchAPI(`/games/${id}`, { method: 'DELETE' }),
 
   // Gameplay
   getRound: (gameId: number) => fetchAPI(`/games/${gameId}/round`),

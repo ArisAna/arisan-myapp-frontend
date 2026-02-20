@@ -621,12 +621,17 @@ function GameContent() {
       setGame(prev => prev ? { ...prev, status: 'finished' } : prev);
     });
 
+    socket.on('game_deleted', () => {
+      router.push('/lobby');
+    });
+
     return () => {
       socket.emit('leave_game_room', Number(gameId));
       socket.off('game_updated');
       socket.off('game_started');
       socket.off('reload_round');
       socket.off('game_finished');
+      socket.off('game_deleted');
       disconnectSocket();
     };
   }, [gameId, loadGame, loadRound, router]);
