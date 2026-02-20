@@ -49,12 +49,28 @@ export default function Home() {
             Δημιουργία Λογαριασμού
           </Link>
         </div>
+
+        {/* Quick icons */}
+        <div className="mt-16 grid grid-cols-3 gap-6 max-w-md mx-auto text-center">
+          <div>
+            <div className="text-2xl mb-1">🎯</div>
+            <p className="text-xs text-slate-400 leading-snug">Διάλεξε ερώτηση</p>
+          </div>
+          <div>
+            <div className="text-2xl mb-1">🃏</div>
+            <p className="text-xs text-slate-400 leading-snug">Ξεγέλασε τους άλλους</p>
+          </div>
+          <div>
+            <div className="text-2xl mb-1">🏆</div>
+            <p className="text-xs text-slate-400 leading-snug">Μάζεψε πόντους</p>
+          </div>
+        </div>
       </div>
 
       {/* How to play */}
       <div className="relative w-full max-w-2xl mt-20">
         <h2 className="text-center text-xl font-bold text-white mb-8 tracking-wide uppercase opacity-70">
-          Πώς παίζεται
+          ΠΩΣ ΠΑΙΖΕΤΑΙ
         </h2>
 
         <div className="space-y-4">
