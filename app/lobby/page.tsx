@@ -19,7 +19,7 @@ interface Game {
 }
 
 function LobbyContent() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ function LobbyContent() {
   useEffect(() => {
     loadGames();
 
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     const socket = getSocket(token);
@@ -56,9 +56,15 @@ function LobbyContent() {
       loadGames();
     });
 
+    socket.on('force_logout', () => {
+      logout();
+      router.push('/login');
+    });
+
     return () => {
       socket.emit('leave_lobby');
       socket.off('lobby_updated');
+      socket.off('force_logout');
       disconnectSocket();
     };
   }, [loadGames]);

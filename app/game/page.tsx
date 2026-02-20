@@ -602,7 +602,7 @@ function FinalResults({ scores }: { scores: ScoreEntry[] }) {
 
 // ── Main Game Page ────────────────────────────────────────────────────────────
 function GameContent() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const gameId = searchParams.get('id');
@@ -645,7 +645,7 @@ function GameContent() {
     if (!gameId) { router.push('/lobby'); return; }
     loadGame();
 
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     const socket = getSocket(token);
@@ -673,6 +673,11 @@ function GameContent() {
       router.push('/lobby');
     });
 
+    socket.on('force_logout', () => {
+      logout();
+      router.push('/login');
+    });
+
     return () => {
       socket.emit('leave_game_room', Number(gameId));
       socket.off('game_updated');
@@ -680,6 +685,7 @@ function GameContent() {
       socket.off('reload_round');
       socket.off('game_finished');
       socket.off('game_deleted');
+      socket.off('force_logout');
       disconnectSocket();
     };
   }, [gameId, loadGame, loadRound, router]);

@@ -1,7 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_RAILWAY_API_URL || 'https://api.arisan.gr/api';
 
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -42,6 +42,9 @@ export const api = {
   getUsers: () => fetchAPI('/admin/users'),
   toggleAdmin: (userId: number) =>
     fetchAPI(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+  getSessions: () => fetchAPI('/admin/sessions'),
+  kickUser: (userId: number) =>
+    fetchAPI(`/admin/users/${userId}/kick`, { method: 'POST' }),
 
   // Migrations
   migrateGameTables: () =>
