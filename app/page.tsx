@@ -39,13 +39,13 @@ export default function Home() {
         <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/login"
-            className="rounded-xl bg-indigo-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-900/50 hover:bg-indigo-500 transition-colors"
+            className="cursor-pointer rounded-xl bg-indigo-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-900/50 hover:bg-indigo-500 transition-colors"
           >
             Σύνδεση
           </Link>
           <Link
             href="/register"
-            className="rounded-xl border border-slate-600 bg-slate-800/60 px-8 py-3.5 text-base font-semibold text-slate-200 hover:bg-slate-700/60 transition-colors"
+            className="cursor-pointer rounded-xl border border-slate-600 bg-slate-800/60 px-8 py-3.5 text-base font-semibold text-slate-200 hover:bg-slate-700/60 transition-colors"
           >
             Δημιουργία Λογαριασμού
           </Link>
@@ -137,7 +137,7 @@ export default function Home() {
         <div className="text-center mt-10">
           <button
             onClick={() => setStoryOpen(true)}
-            className="text-slate-500 hover:text-slate-300 text-sm transition-colors underline-offset-4 hover:underline"
+            className="cursor-pointer inline-flex items-center gap-2 text-amber-400/80 hover:text-amber-300 text-base font-medium tracking-wide transition-colors border-b border-amber-400/30 hover:border-amber-300/60 pb-0.5"
           >
             ✦ Η ιστορία του παιχνιδιού
           </button>
@@ -189,7 +189,7 @@ export default function Home() {
                 Μία κρύα βραδιά, σε ένα χωριό με το όνομα Πευκόφυτο, μια παρέα πέντε συγγενών και φίλων — με ένα παλαιωμένο ρούμι στο χέρι, μπροστά σε ένα τζάκι που οι φλόγες του ζέσταιναν ολόκληρο το σπίτι — παρακολουθούσαν από το παράθυρο την πυκνή ομίχλη να σκεπάζει τον κόσμο γύρω τους.
               </p>
               <p className="italic text-[15px]">
-                Εκείνο το βράδυ αποφάσισαν να φτιάξουν κάτι δικό τους: ένα παιχνίδι που προσφέρει διασκέδαση και γέλιο, που χρειάζεται στρατηγική και γνώσεις — αλλά κυρίως, να ξέρεις καλά τους ανθρώπους δίπλα σου.
+                Εκείνο το βράδυ αποφάσισαν να φτιάξουν κάτι δικό τους: ένα παιχνίδι που προσφέρει διασκέδαση και γέλιο, που χρειάζεται στρατηγική και γνώσεις — αλλά κυρίως, να ξέρεις καλά τους ανθρώπους δίπλα σου...
               </p>
               <p className="italic text-[15px] font-semibold text-center pt-2" style={{ color: '#5a2d0c' }}>
                 Το AKAMA! γεννήθηκε εκείνη τη νύχτα.
@@ -199,7 +199,7 @@ export default function Home() {
             {/* Close button */}
             <button
               onClick={() => setStoryOpen(false)}
-              className="absolute top-3 right-4 text-xl leading-none transition-opacity hover:opacity-60"
+              className="cursor-pointer absolute top-3 right-4 text-xl leading-none transition-opacity hover:opacity-60"
               style={{ color: '#7a5c3a' }}
               aria-label="Κλείσιμο"
             >
