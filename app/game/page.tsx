@@ -32,6 +32,7 @@ interface Answer {
   answer_text: string;
   is_correct: boolean;
   votes_received: number;
+  voters?: string[];
 }
 
 interface ScoreEntry {
@@ -654,8 +655,8 @@ function ResultsPhase({ gameId, round, userId }: { gameId: number; round: Round;
                   : 'border-gray-200 bg-white'
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900">{a.answer_text}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {isActualCorrect
@@ -671,6 +672,15 @@ function ResultsPhase({ gameId, round, userId }: { gameId: number; round: Round;
                   )}
                 </div>
               </div>
+              {a.voters && a.voters.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {a.voters.map((name, idx) => (
+                    <span key={idx} className="inline-block rounded-full bg-white border border-gray-200 px-2 py-0.5 text-xs text-gray-500">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
