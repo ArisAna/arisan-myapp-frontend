@@ -41,7 +41,14 @@ interface ScoreEntry {
 }
 
 interface Round {
-  game: { current_round: number; total_rounds: number; status: string };
+  game: {
+    current_round: number;
+    total_rounds: number;
+    status: string;
+    end_mode: 'cycles' | 'points';
+    cycles: number;
+    target_points: number | null;
+  };
   scores: ScoreEntry[];
   round_number: number;
   question_master_id: number;
@@ -90,9 +97,12 @@ function Scoreboard({ scores, currentUserId }: { scores: ScoreEntry[]; currentUs
 // ── Picking Phase ────────────────────────────────────────────────────────────
 function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round; userId: number }) {
   const [questions, setQuestions] = useState<AvailableQuestion[]>([]);
+  const [shownIds, setShownIds] = useState<number[]>([]);
+  const [hasMore, setHasMore] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [picking, setPicking] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -103,26 +113,39 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
   const [seedMsg, setSeedMsg] = useState('');
   const isQM = round.question_master_id === userId;
 
-  const loadQuestions = (category?: string) => {
-    setLoading(true);
+  const fetchQuestions = (category: string | undefined, excludeIds: number[], append: boolean) => {
+    if (append) setLoadingMore(true); else setLoading(true);
     setError('');
-    api.getAvailableQuestions(gameId, category || undefined)
+    api.getAvailableQuestions(gameId, category, excludeIds)
       .then(d => {
-        setQuestions(d.questions);
+        const newQs: AvailableQuestion[] = d.questions;
+        if (append) {
+          setQuestions(prev => [...prev, ...newQs]);
+          setShownIds(prev => [...prev, ...newQs.map((q: AvailableQuestion) => q.id)]);
+        } else {
+          setQuestions(newQs);
+          setShownIds(newQs.map((q: AvailableQuestion) => q.id));
+        }
+        setHasMore(newQs.length === 6);
         if (d.categories) setCategories(d.categories);
       })
       .catch(() => setError('Δεν ήρθαν ερωτήσεις'))
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); setLoadingMore(false); });
   };
 
   useEffect(() => {
-    if (isQM) loadQuestions();
+    if (isQM) fetchQuestions(undefined, [], false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, isQM]);
 
   const handleCategoryChange = (cat: string) => {
     setSelectedCategory(cat);
-    loadQuestions(cat || undefined);
+    setShownIds([]);
+    fetchQuestions(cat || undefined, [], false);
+  };
+
+  const handleLoadMore = () => {
+    fetchQuestions(selectedCategory || undefined, shownIds, true);
   };
 
   const handlePick = async (questionId: number) => {
@@ -175,7 +198,9 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
     try {
       const result = await api.seedGameQuestions(gameId);
       setSeedMsg(result.message);
-      loadQuestions(selectedCategory || undefined);
+      // Reset and reload — new questions are newest so they'll appear first
+      setShownIds([]);
+      fetchQuestions(selectedCategory || undefined, [], false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error generating questions');
     } finally {
@@ -314,6 +339,15 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
               )}
             </div>
           ))}
+          {hasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore || picking}
+              className="w-full rounded-xl border border-gray-300 py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {loadingMore ? 'Φόρτωση...' : '+ Περισσότερες ερωτήσεις'}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -459,7 +493,7 @@ function VotingPhase({ gameId, round, userId, totalPlayers }: { gameId: number; 
 function ResultsPhase({ gameId, round, userId }: { gameId: number; round: Round; userId: number }) {
   const [advancing, setAdvancing] = useState(false);
   const isQM = round.question_master_id === userId;
-  const isLastRound = round.game.current_round >= round.game.total_rounds;
+  const isLastRound = round.game.end_mode === 'cycles' && round.game.current_round >= round.game.total_rounds;
 
   const handleNext = async () => {
     setAdvancing(true);
@@ -735,7 +769,9 @@ function GameContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Γύρος {round.round_number}/{round.game.total_rounds}
+              {round.game.end_mode === 'points'
+                ? `Γύρος ${round.round_number} · 🎯 ${round.game.target_points}pts`
+                : `Γύρος ${round.round_number}/${round.game.total_rounds}`}
             </h1>
             <p className="text-sm text-gray-500">
               QM: <span className="font-medium text-blue-600">{round.qm_name}</span>

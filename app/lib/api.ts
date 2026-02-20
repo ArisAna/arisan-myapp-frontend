@@ -46,6 +46,8 @@ export const api = {
   // Migrations
   migrateGameTables: () =>
     fetchAPI('/migrate/game-tables', { method: 'POST' }),
+  migrateGameEndConditions: () =>
+    fetchAPI('/migrate/game-end-conditions', { method: 'POST' }),
 
   // Questions
   getCategories: () => fetchAPI('/questions/categories'),
@@ -71,7 +73,8 @@ export const api = {
   // Games
   getGames: () => fetchAPI('/games'),
   getGame: (id: number) => fetchAPI(`/games/${id}`),
-  createGame: () => fetchAPI('/games', { method: 'POST' }),
+  createGame: (settings: { end_mode: 'cycles' | 'points'; cycles?: number; target_points?: number }) =>
+    fetchAPI('/games', { method: 'POST', body: JSON.stringify(settings) }),
   joinGame: (id: number) => fetchAPI(`/games/${id}/join`, { method: 'POST' }),
   leaveGame: (id: number) => fetchAPI(`/games/${id}/leave`, { method: 'POST' }),
   startGame: (id: number) => fetchAPI(`/games/${id}/start`, { method: 'POST' }),
@@ -79,8 +82,13 @@ export const api = {
 
   // Gameplay
   getRound: (gameId: number) => fetchAPI(`/games/${gameId}/round`),
-  getAvailableQuestions: (gameId: number, category?: string) =>
-    fetchAPI(`/games/${gameId}/available-questions${category ? `?category=${encodeURIComponent(category)}` : ''}`),
+  getAvailableQuestions: (gameId: number, category?: string, exclude?: number[]) => {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    if (exclude?.length) params.set('exclude', exclude.join(','));
+    const qs = params.toString();
+    return fetchAPI(`/games/${gameId}/available-questions${qs ? `?${qs}` : ''}`);
+  },
   pickQuestion: (gameId: number, questionId: number) =>
     fetchAPI(`/games/${gameId}/pick-question`, { method: 'POST', body: JSON.stringify({ question_id: questionId }) }),
   editGameQuestion: (gameId: number, questionId: number, data: { question_text?: string; correct_answer?: string }) =>

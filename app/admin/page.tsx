@@ -47,14 +47,34 @@ function AdminContent() {
 
           <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Database</h2>
-            <p className="mt-1 text-sm text-gray-600 mb-4">Run migrations to create game tables</p>
-            <button
-              onClick={handleMigrate}
-              disabled={migrating}
-              className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
-            >
-              {migrating ? 'Running...' : 'Run Game Tables Migration'}
-            </button>
+            <p className="mt-1 text-sm text-gray-600 mb-4">Run migrations to create or update game tables</p>
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={handleMigrate}
+                disabled={migrating}
+                className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+              >
+                {migrating ? 'Running...' : 'Game Tables'}
+              </button>
+              <button
+                onClick={async () => {
+                  setMigrating(true);
+                  setMigrateMsg('');
+                  try {
+                    const data = await api.migrateGameEndConditions();
+                    setMigrateMsg(data.message);
+                  } catch (err) {
+                    setMigrateMsg(err instanceof Error ? err.message : 'Migration failed');
+                  } finally {
+                    setMigrating(false);
+                  }
+                }}
+                disabled={migrating}
+                className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+              >
+                {migrating ? 'Running...' : 'Game End Conditions'}
+              </button>
+            </div>
             {migrateMsg && (
               <p className="mt-3 text-sm text-green-700 bg-green-50 p-2 rounded">{migrateMsg}</p>
             )}

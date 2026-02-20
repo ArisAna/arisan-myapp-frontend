@@ -23,6 +23,10 @@ function LobbyContent() {
   const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [endMode, setEndMode] = useState<'cycles' | 'points'>('cycles');
+  const [cycles, setCycles] = useState(1);
+  const [targetPoints, setTargetPoints] = useState(15);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -63,7 +67,10 @@ function LobbyContent() {
     setCreating(true);
     setError('');
     try {
-      const data = await api.createGame();
+      const settings = endMode === 'cycles'
+        ? { end_mode: 'cycles' as const, cycles }
+        : { end_mode: 'points' as const, target_points: targetPoints };
+      const data = await api.createGame(settings);
       router.push(`/game?id=${data.game.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create game');
@@ -122,13 +129,98 @@ function LobbyContent() {
         {/* Create game (admin only) */}
         {user?.is_admin && (
           <div className="mb-8">
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="w-full rounded-xl bg-blue-600 px-6 py-4 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {creating ? 'Δημιουργία...' : '+ Νέο Παιχνίδι'}
-            </button>
+            {!showCreateForm ? (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="w-full rounded-xl bg-blue-600 px-6 py-4 text-white font-semibold hover:bg-blue-700 transition-colors"
+              >
+                + Νέο Παιχνίδι
+              </button>
+            ) : (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-blue-900">Νέο Παιχνίδι</h3>
+                  <button onClick={() => setShowCreateForm(false)} className="text-blue-400 hover:text-blue-600 text-sm">✕</button>
+                </div>
+
+                {/* End condition toggle */}
+                <div>
+                  <p className="text-sm font-medium text-blue-800 mb-2">Τέλος παιχνιδιού</p>
+                  <div className="flex rounded-lg overflow-hidden border border-blue-200">
+                    <button
+                      onClick={() => setEndMode('cycles')}
+                      className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                        endMode === 'cycles' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-50'
+                      }`}
+                    >
+                      Κύκλοι
+                    </button>
+                    <button
+                      onClick={() => setEndMode('points')}
+                      className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                        endMode === 'points' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-50'
+                      }`}
+                    >
+                      Πόντοι
+                    </button>
+                  </div>
+                </div>
+
+                {endMode === 'cycles' ? (
+                  <div>
+                    <p className="text-sm font-medium text-blue-800 mb-1">
+                      Αριθμός κύκλων: <span className="font-bold">{cycles}</span>
+                    </p>
+                    <p className="text-xs text-blue-600 mb-2">
+                      1 κύκλος = όλοι οι παίκτες γίνονται QM 1 φορά
+                    </p>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setCycles(n)}
+                          className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${
+                            cycles === n ? 'bg-blue-600 text-white' : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium text-blue-800 mb-1">
+                      Πόντοι νίκης: <span className="font-bold">{targetPoints}</span>
+                    </p>
+                    <p className="text-xs text-blue-600 mb-2">
+                      Ο πρώτος παίκτης που φτάνει αυτούς τους πόντους κερδίζει
+                    </p>
+                    <div className="flex gap-2">
+                      {[10, 15, 20, 25, 30].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setTargetPoints(n)}
+                          className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${
+                            targetPoints === n ? 'bg-blue-600 text-white' : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCreate}
+                  disabled={creating}
+                  className="w-full rounded-xl bg-green-600 py-3 text-white font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                >
+                  {creating ? 'Δημιουργία...' : 'Δημιουργία Παιχνιδιού'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
