@@ -1,25 +1,44 @@
 # ============================================
-# Cache Control for Next.js Static Export
+# Next.js Static Export - Apache Config
 # ============================================
 
+DirectoryIndex index.html
+Options -Indexes
+
+# -- Route handling: serve .html files for clean URLs --
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Don't rewrite real files or directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # If filename.html exists, serve it
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
+</IfModule>
+
+# ============================================
+# Cache Control
+# ============================================
 <IfModule mod_headers.c>
 
-  # -- HTML pages: always revalidate --
+  # HTML pages: always revalidate
   <FilesMatch "\.(html|htm)$">
     Header set Cache-Control "public, no-cache"
   </FilesMatch>
 
-  # -- Hashed assets (_next/static): cache forever --
+  # Hashed assets (_next/static): cache forever
   <FilesMatch "\.(js|css)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
-  # -- Fonts: cache for 1 year --
+  # Fonts: cache for 1 year
   <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
-  # -- Images: cache for 30 days --
+  # Images: cache for 30 days
   <FilesMatch "\.(ico|png|jpg|jpeg|gif|svg|webp|avif)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
