@@ -24,5 +24,15 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!user) return null;
 
-  return <>{children}</>;
+  return (
+    <>
+      <div className="fixed top-3 right-3 z-50 flex items-center gap-1.5 rounded-full bg-slate-800/80 backdrop-blur-sm border border-slate-700/60 px-3 py-1.5 shadow-lg">
+        <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+        <span className="text-xs font-medium text-slate-200 max-w-[140px] truncate">
+          {user.display_name}
+        </span>
+      </div>
+      {children}
+    </>
+  );
 }

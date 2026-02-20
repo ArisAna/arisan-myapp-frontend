@@ -2,12 +2,13 @@
 
 import { useAuth } from './context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [storyOpen, setStoryOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -132,7 +133,81 @@ export default function Home() {
         <p className="text-center text-slate-500 text-sm mt-8">
           Ο παίκτης με τους περισσότερους πόντους στο τέλος κερδίζει.
         </p>
+
+        <div className="text-center mt-10">
+          <button
+            onClick={() => setStoryOpen(true)}
+            className="text-slate-500 hover:text-slate-300 text-sm transition-colors underline-offset-4 hover:underline"
+          >
+            ✦ Η ιστορία του παιχνιδιού
+          </button>
+        </div>
       </div>
+
+      {/* Origin Story Modal */}
+      {storyOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={() => setStoryOpen(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Papyrus card */}
+          <div
+            className="relative max-w-lg w-full rounded-2xl shadow-2xl px-8 pt-10 pb-8"
+            style={{
+              background: 'linear-gradient(160deg, #f5e6c8 0%, #ecdcb0 40%, #e8d49e 100%)',
+              border: '2px solid #b8956a',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Wax seal flourish */}
+            <div className="flex justify-center mb-6">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                style={{
+                  background: 'radial-gradient(circle at 35% 35%, #c0392b, #7b1c1c)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  border: '1.5px solid #5a1010',
+                }}
+              >
+                <span style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>✦</span>
+              </div>
+            </div>
+
+            {/* Story text */}
+            <div
+              className="space-y-4 leading-relaxed"
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#3b2a14',
+              }}
+            >
+              <p className="italic text-[15px]">
+                Μία κρύα βραδιά, σε ένα χωριό με το όνομα Πευκόφυτο, μια παρέα πέντε συγγενών και φίλων — με ένα παλαιωμένο ρούμι στο χέρι, μπροστά σε ένα τζάκι που οι φλόγες του ζέσταιναν ολόκληρο το σπίτι — παρακολουθούσαν από το παράθυρο την πυκνή ομίχλη να σκεπάζει τον κόσμο γύρω τους.
+              </p>
+              <p className="italic text-[15px]">
+                Εκείνο το βράδυ αποφάσισαν να φτιάξουν κάτι δικό τους: ένα παιχνίδι που προσφέρει διασκέδαση και γέλιο, που χρειάζεται στρατηγική και γνώσεις — αλλά κυρίως, να ξέρεις καλά τους ανθρώπους δίπλα σου.
+              </p>
+              <p className="italic text-[15px] font-semibold text-center pt-2" style={{ color: '#5a2d0c' }}>
+                Το AKAMA! γεννήθηκε εκείνη τη νύχτα.
+              </p>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setStoryOpen(false)}
+              className="absolute top-3 right-4 text-xl leading-none transition-opacity hover:opacity-60"
+              style={{ color: '#7a5c3a' }}
+              aria-label="Κλείσιμο"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
