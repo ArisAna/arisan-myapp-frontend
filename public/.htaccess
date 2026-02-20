@@ -11,16 +11,17 @@ DirectorySlash Off
   RewriteEngine On
   RewriteBase /
 
-  # Handle trailing slash: /dashboard/ → serve dashboard.html internally (no redirect)
+  # Serve actual files (JS, CSS, images, etc.) as-is
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Handle trailing slash: /lobby/ → serve lobby.html internally (no redirect)
   RewriteCond %{REQUEST_URI} ^/(.+)/$
   RewriteCond %{DOCUMENT_ROOT}/%1.html -f
   RewriteRule ^(.+)/$ %1.html [L,NC]
 
-  # Don't rewrite real files or directories
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-
   # If filename.html exists, serve it
+  # (no !-d check — handles case where a stale directory co-exists with the .html)
   RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.html -f
   RewriteRule ^(.+)$ $1.html [L]
 </IfModule>
