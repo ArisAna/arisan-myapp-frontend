@@ -123,7 +123,7 @@ function GameContent() {
 
   const isCreator = user?.id === game.created_by;
   const isAdmin = user?.is_admin;
-  const canStart = (isCreator || isAdmin) && game.status === 'lobby' && game.players.length >= 2;
+  const canStart = (isCreator || isAdmin) && game.status === 'lobby' && game.players.length >= 3;
   const isInGame = game.players.some(p => p.user_id === user?.id);
 
   return (
@@ -206,7 +206,7 @@ function GameContent() {
             )}
             {(isCreator || isAdmin) && game.players.length < 2 && (
               <p className="text-center text-sm text-gray-400">
-                Χρειάζονται τουλάχιστον 2 παίκτες για να ξεκινήσει το παιχνίδι.
+                Χρειάζονται τουλάχιστον 3 παίκτες για να ξεκινήσει το παιχνίδι.
               </p>
             )}
             {isInGame && !isCreator && (
