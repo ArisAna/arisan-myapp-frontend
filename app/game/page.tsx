@@ -215,7 +215,11 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
         <p className="text-lg font-medium text-gray-700">
           Ο <span className="font-bold text-blue-600">{round.qm_name}</span> επιλέγει ερώτηση...
         </p>
-        <p className="text-sm text-gray-400 mt-2">Γύρος {round.round_number} από {round.game.total_rounds}</p>
+        <p className="text-sm text-gray-400 mt-2">
+          {round.game.end_mode === 'points'
+            ? `Γύρος ${round.round_number} · 🎯 ${round.game.target_points}pts`
+            : `Γύρος ${round.round_number} από ${round.game.total_rounds}`}
+        </p>
       </div>
     );
   }
@@ -245,7 +249,7 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
           disabled={seeding}
           className="shrink-0 rounded-lg bg-purple-600 px-3 py-2 text-xs text-white font-medium hover:bg-purple-700 disabled:opacity-50"
         >
-          {seeding ? '⏳ AI...' : '✨ +30 AI'}
+          {seeding ? '⏳ AI...' : '✨ +10 AI'}
         </button>
       </div>
 
@@ -516,32 +520,42 @@ function ResultsPhase({ gameId, round, userId }: { gameId: number; round: Round;
       </div>
 
       <div className="space-y-2">
-        {round.answers.map(a => (
-          <div
-            key={a.id}
-            className={`rounded-xl border p-4 ${
-              a.is_correct
-                ? 'border-green-300 bg-green-50'
-                : a.votes_received > 0
-                ? 'border-orange-200 bg-orange-50'
-                : 'border-gray-200 bg-white'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{a.answer_text}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {a.is_correct ? '✅ Σωστή απάντηση' : `από: ${a.display_name || '?'}`}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                {a.votes_received > 0 && (
-                  <span className="text-sm font-bold text-gray-700">{a.votes_received} 🗳️</span>
-                )}
+        {round.answers.map(a => {
+          const isActualCorrect = a.is_correct && !a.user_id;
+          const isCorrectGuess = a.is_correct && !!a.user_id;
+          return (
+            <div
+              key={a.id}
+              className={`rounded-xl border p-4 ${
+                isActualCorrect
+                  ? 'border-green-300 bg-green-50'
+                  : isCorrectGuess
+                  ? 'border-blue-300 bg-blue-50'
+                  : a.votes_received > 0
+                  ? 'border-orange-200 bg-orange-50'
+                  : 'border-gray-200 bg-white'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{a.answer_text}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {isActualCorrect
+                      ? '✅ Σωστή απάντηση'
+                      : isCorrectGuess
+                      ? `⚡ Βρήκε τη σωστή! · ${a.display_name} (+3)`
+                      : `από: ${a.display_name || '?'}`}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  {a.votes_received > 0 && (
+                    <span className="text-sm font-bold text-gray-700">{a.votes_received} 🗳️</span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {isQM && (
@@ -778,16 +792,19 @@ function GameContent() {
               {round.question_master_id === user.id && ' (εσύ)'}
             </p>
           </div>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-            round.status === 'picking' ? 'bg-yellow-100 text-yellow-800' :
-            round.status === 'answering' ? 'bg-blue-100 text-blue-800' :
-            round.status === 'voting' ? 'bg-purple-100 text-purple-800' :
-            'bg-green-100 text-green-800'
-          }`}>
-            {round.status === 'picking' ? 'Επιλογή' :
-             round.status === 'answering' ? 'Απαντήσεις' :
-             round.status === 'voting' ? 'Ψηφοφορία' : 'Αποτελέσματα'}
-          </span>
+          <div className="flex items-center gap-2">
+            <Link href="/lobby" className="text-xs text-gray-400 hover:text-gray-600">← Lobby</Link>
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+              round.status === 'picking' ? 'bg-yellow-100 text-yellow-800' :
+              round.status === 'answering' ? 'bg-blue-100 text-blue-800' :
+              round.status === 'voting' ? 'bg-purple-100 text-purple-800' :
+              'bg-green-100 text-green-800'
+            }`}>
+              {round.status === 'picking' ? 'Επιλογή' :
+               round.status === 'answering' ? 'Απαντήσεις' :
+               round.status === 'voting' ? 'Ψηφοφορία' : 'Αποτελέσματα'}
+            </span>
+          </div>
         </div>
 
         {/* Scoreboard */}
