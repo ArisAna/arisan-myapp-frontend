@@ -107,4 +107,6 @@ export const api = {
     fetchAPI(`/games/${gameId}/vote`, { method: 'POST', body: JSON.stringify({ answer_id: answerId }) }),
   nextRound: (gameId: number) =>
     fetchAPI(`/games/${gameId}/next-round`, { method: 'POST' }),
+  getGameBreakdown: (gameId: number) =>
+    fetchAPI(`/games/${gameId}/breakdown`),
 };

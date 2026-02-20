@@ -70,6 +70,16 @@ interface AvailableQuestion {
   category: string | null;
 }
 
+interface PlayerBreakdown {
+  user_id: number;
+  display_name: string;
+  score: number;
+  correct_guesses: number;
+  correct_votes: number;
+  bluff_votes: number;
+  qm_bonuses: number;
+}
+
 // ── Scoreboard ──────────────────────────────────────────────────────────────
 function Scoreboard({ scores, currentUserId }: { scores: ScoreEntry[]; currentUserId: number }) {
   return (
@@ -685,23 +695,96 @@ function ResultsPhase({ gameId, round, userId }: { gameId: number; round: Round;
 }
 
 // ── Final Results ─────────────────────────────────────────────────────────────
-function FinalResults({ scores }: { scores: ScoreEntry[] }) {
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+function FinalResults({ scores, gameId }: { scores: ScoreEntry[]; gameId: number }) {
+  const [breakdown, setBreakdown] = useState<PlayerBreakdown[]>([]);
+
+  useEffect(() => {
+    api.getGameBreakdown(gameId)
+      .then(d => { if (d.success) setBreakdown(d.breakdown); })
+      .catch(() => {});
+  }, [gameId]);
+
   return (
     <div className="text-center">
       <div className="text-5xl mb-4">🏆</div>
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Τέλος Παιχνιδιού!</h2>
-      <div className="rounded-xl bg-white border border-gray-200 overflow-hidden">
+
+      {/* Leaderboard */}
+      <div className="rounded-xl bg-white border border-gray-200 overflow-hidden mb-8">
         {scores.map((s, i) => (
           <div key={s.user_id} className={`flex items-center justify-between px-6 py-4 ${i < scores.length - 1 ? 'border-b border-gray-100' : ''}`}>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+              <span className="text-2xl">{MEDALS[i] ?? `${i + 1}.`}</span>
               <span className="font-semibold text-gray-900">{s.display_name}</span>
             </div>
             <span className="text-xl font-bold text-gray-900">{s.score} pts</span>
           </div>
         ))}
       </div>
-      <Link href="/lobby" className="mt-6 inline-block rounded-xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700">
+
+      {/* Per-player breakdown */}
+      {breakdown.length > 0 && (
+        <div className="text-left space-y-3 mb-8">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">Ανάλυση Πόντων</p>
+          {breakdown.map((b, i) => {
+            const cgPts = b.correct_guesses * 3;
+            const cvPts = b.correct_votes * 2;
+            const bvPts = b.bluff_votes;
+            const qmPts = b.qm_bonuses * 3;
+            const total = b.score;
+            const pct = (pts: number) =>
+              total > 0 ? `${((pts / total) * 100).toFixed(1)}%` : '0%';
+
+            const stats = [
+              { color: 'bg-green-500', textColor: 'text-green-700', label: 'Βρήκε τη σωστή', count: b.correct_guesses, pts: cgPts, suffix: '×3' },
+              { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Ψήφισε σωστά', count: b.correct_votes, pts: cvPts, suffix: '×2' },
+              { color: 'bg-violet-500', textColor: 'text-violet-700', label: 'Ξεγέλασε παίκτες', count: b.bluff_votes, pts: bvPts, suffix: '×1' },
+              { color: 'bg-amber-400', textColor: 'text-amber-700', label: 'QM χωρίς σωστή ψήφο', count: b.qm_bonuses, pts: qmPts, suffix: '×3' },
+            ];
+
+            return (
+              <div key={b.user_id} className="rounded-xl bg-white border border-gray-200 p-4">
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">{MEDALS[i] ?? `${i + 1}.`}</span>
+                  <span className="font-semibold text-gray-900">{b.display_name}</span>
+                  <span className="ml-auto text-sm font-bold text-gray-700">{b.score} pts</span>
+                </div>
+
+                {/* Stacked bar */}
+                <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 mb-3">
+                  {cgPts > 0 && <div style={{ width: pct(cgPts) }} className="bg-green-500 transition-all" />}
+                  {cvPts > 0 && <div style={{ width: pct(cvPts) }} className="bg-blue-500 transition-all" />}
+                  {bvPts > 0 && <div style={{ width: pct(bvPts) }} className="bg-violet-500 transition-all" />}
+                  {qmPts > 0 && <div style={{ width: pct(qmPts) }} className="bg-amber-400 transition-all" />}
+                </div>
+
+                {/* Stat rows — only show categories with points */}
+                {total === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-1">Κανένας πόντος αυτή τη φορά</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {stats.filter(s => s.count > 0).map(s => (
+                      <div key={s.label} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`shrink-0 w-2 h-2 rounded-full ${s.color}`} />
+                          <span className="text-gray-600 truncate">{s.label}</span>
+                          <span className="text-gray-400 shrink-0">×{s.count}</span>
+                        </div>
+                        <span className={`shrink-0 ml-2 font-semibold ${s.textColor}`}>+{s.pts}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Link href="/lobby" className="inline-block rounded-xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700">
         Επιστροφή στο Lobby
       </Link>
     </div>
@@ -816,7 +899,7 @@ function GameContent() {
     return (
       <main className="min-h-screen bg-gray-50 px-4 py-8">
         <div className="mx-auto max-w-md">
-          <FinalResults scores={finalScores} />
+          <FinalResults scores={finalScores} gameId={Number(gameId)} />
         </div>
       </main>
     );
