@@ -2,12 +2,19 @@
 
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 function DashboardContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [stats, setStats] = useState<{ games_played: number; wins: number } | null>(null);
+
+  useEffect(() => {
+    api.getStats().then(data => setStats(data.stats)).catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -29,9 +36,16 @@ function DashboardContent() {
 
         <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Welcome, {user?.display_name}</h2>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p><span className="font-medium">Email:</span> {user?.email}</p>
-            <p><span className="font-medium">User ID:</span> {user?.id}</p>
+          <p className="text-sm text-gray-600 mb-5"><span className="font-medium">Email:</span> {user?.email}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 text-center">
+              <p className="text-3xl font-bold text-gray-900">{stats ? stats.games_played : '—'}</p>
+              <p className="text-sm text-gray-500 mt-1">Παιχνίδια</p>
+            </div>
+            <div className="rounded-lg bg-yellow-50 border border-yellow-100 p-4 text-center">
+              <p className="text-3xl font-bold text-yellow-700">{stats ? stats.wins : '—'}</p>
+              <p className="text-sm text-yellow-600 mt-1">Νίκες</p>
+            </div>
           </div>
         </div>
 

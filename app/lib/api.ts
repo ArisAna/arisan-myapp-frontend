@@ -37,6 +37,7 @@ export const api = {
     }),
 
   getMe: () => fetchAPI('/auth/me'),
+  getStats: () => fetchAPI('/auth/stats'),
 
   // Admin
   getUsers: () => fetchAPI('/admin/users'),
