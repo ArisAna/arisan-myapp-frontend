@@ -59,6 +59,7 @@ interface Round {
 interface AvailableQuestion {
   id: number;
   question_text: string;
+  correct_answer: string;
   category: string | null;
 }
 
@@ -89,19 +90,40 @@ function Scoreboard({ scores, currentUserId }: { scores: ScoreEntry[]; currentUs
 // ── Picking Phase ────────────────────────────────────────────────────────────
 function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round; userId: number }) {
   const [questions, setQuestions] = useState<AvailableQuestion[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
   const [picking, setPicking] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editQuestion, setEditQuestion] = useState('');
+  const [editAnswer, setEditAnswer] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
   const [error, setError] = useState('');
+  const [seedMsg, setSeedMsg] = useState('');
   const isQM = round.question_master_id === userId;
 
+  const loadQuestions = (category?: string) => {
+    setLoading(true);
+    setError('');
+    api.getAvailableQuestions(gameId, category || undefined)
+      .then(d => {
+        setQuestions(d.questions);
+        if (d.categories) setCategories(d.categories);
+      })
+      .catch(() => setError('Δεν ήρθαν ερωτήσεις'))
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    if (isQM) {
-      api.getAvailableQuestions(gameId)
-        .then(d => setQuestions(d.questions))
-        .catch(() => setError('Δεν ήρθαν ερωτήσεις'))
-        .finally(() => setLoading(false));
-    }
+    if (isQM) loadQuestions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, isQM]);
+
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    loadQuestions(cat || undefined);
+  };
 
   const handlePick = async (questionId: number) => {
     setPicking(true);
@@ -111,6 +133,53 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
       setPicking(false);
+    }
+  };
+
+  const startEdit = (q: AvailableQuestion) => {
+    setEditingId(q.id);
+    setEditQuestion(q.question_text);
+    setEditAnswer(q.correct_answer);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditQuestion('');
+    setEditAnswer('');
+  };
+
+  const saveEdit = async (questionId: number) => {
+    setSavingEdit(true);
+    try {
+      const updated = await api.editGameQuestion(gameId, questionId, {
+        question_text: editQuestion,
+        correct_answer: editAnswer,
+      });
+      setQuestions(prev => prev.map(q =>
+        q.id === questionId
+          ? { ...q, question_text: updated.question.question_text, correct_answer: updated.question.correct_answer }
+          : q
+      ));
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error saving');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    setSeedMsg('');
+    setError('');
+    try {
+      const result = await api.seedGameQuestions(gameId);
+      setSeedMsg(result.message);
+      loadQuestions(selectedCategory || undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error generating questions');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -130,31 +199,119 @@ function PickingPhase({ gameId, round, userId }: { gameId: number; round: Round;
     <div>
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
         <p className="text-blue-800 font-semibold text-center">
-          🎯 Είσαι ο Question Master! Επίλεξε μια ερώτηση.
+          🎯 Είσαι ο Question Master! Επίλεξε ερώτηση.
         </p>
       </div>
+
+      {/* Controls row */}
+      <div className="flex gap-2 mb-3">
+        <select
+          value={selectedCategory}
+          onChange={e => handleCategoryChange(e.target.value)}
+          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Όλες οι κατηγορίες</option>
+          {categories.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <button
+          onClick={handleSeed}
+          disabled={seeding}
+          className="shrink-0 rounded-lg bg-purple-600 px-3 py-2 text-xs text-white font-medium hover:bg-purple-700 disabled:opacity-50"
+        >
+          {seeding ? '⏳ AI...' : '✨ +30 AI'}
+        </button>
+      </div>
+
+      {seedMsg && (
+        <p className="mb-3 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{seedMsg}</p>
+      )}
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+
       {loading ? (
         <p className="text-center text-gray-400 py-6">Φόρτωση ερωτήσεων...</p>
       ) : questions.length === 0 ? (
-        <p className="text-center text-gray-400 py-6">Δεν υπάρχουν άλλες ερωτήσεις.</p>
+        <div className="text-center py-6">
+          <p className="text-gray-400">Δεν υπάρχουν ερωτήσεις.</p>
+          <p className="text-xs text-gray-400 mt-1">Δοκίμασε άλλη κατηγορία ή δημιούργησε με AI.</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {questions.map(q => (
-            <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-4 flex items-start justify-between gap-3">
-              <div>
-                {q.category && (
-                  <span className="inline-block text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mb-1">{q.category}</span>
-                )}
-                <p className="text-sm text-gray-800">{q.question_text}</p>
-              </div>
-              <button
-                onClick={() => handlePick(q.id)}
-                disabled={picking}
-                className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                Επιλογή
-              </button>
+            <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-4">
+              {editingId === q.id ? (
+                /* Edit mode */
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-0.5 block">Ερώτηση</label>
+                    <input
+                      type="text"
+                      value={editQuestion}
+                      onChange={e => setEditQuestion(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-0.5 block">Σωστή απάντηση</label>
+                    <input
+                      type="text"
+                      value={editAnswer}
+                      onChange={e => setEditAnswer(e.target.value)}
+                      className="w-full rounded-lg border border-green-400 px-3 py-2 text-sm text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => saveEdit(q.id)}
+                      disabled={savingEdit}
+                      className="flex-1 rounded-lg bg-green-600 py-1.5 text-xs text-white font-medium hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {savingEdit ? 'Αποθήκευση...' : '✓ Αποθήκευση'}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      disabled={savingEdit}
+                      className="flex-1 rounded-lg border border-gray-300 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Άκυρο
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* View mode */
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1">
+                      {q.category && (
+                        <span className="inline-block text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mb-1">{q.category}</span>
+                      )}
+                      <p className="text-sm text-gray-800">{q.question_text}</p>
+                    </div>
+                    <button
+                      onClick={() => startEdit(q)}
+                      className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded"
+                      title="Επεξεργασία"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-green-600 font-medium bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+                        ✓ {q.correct_answer}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handlePick(q.id)}
+                      disabled={picking}
+                      className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Επιλογή
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

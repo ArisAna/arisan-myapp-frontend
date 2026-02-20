@@ -78,9 +78,14 @@ export const api = {
 
   // Gameplay
   getRound: (gameId: number) => fetchAPI(`/games/${gameId}/round`),
-  getAvailableQuestions: (gameId: number) => fetchAPI(`/games/${gameId}/available-questions`),
+  getAvailableQuestions: (gameId: number, category?: string) =>
+    fetchAPI(`/games/${gameId}/available-questions${category ? `?category=${encodeURIComponent(category)}` : ''}`),
   pickQuestion: (gameId: number, questionId: number) =>
     fetchAPI(`/games/${gameId}/pick-question`, { method: 'POST', body: JSON.stringify({ question_id: questionId }) }),
+  editGameQuestion: (gameId: number, questionId: number, data: { question_text?: string; correct_answer?: string }) =>
+    fetchAPI(`/games/${gameId}/edit-question/${questionId}`, { method: 'PUT', body: JSON.stringify(data) }),
+  seedGameQuestions: (gameId: number) =>
+    fetchAPI(`/games/${gameId}/seed-questions`, { method: 'POST' }),
   submitAnswer: (gameId: number, answerText: string) =>
     fetchAPI(`/games/${gameId}/answer`, { method: 'POST', body: JSON.stringify({ answer_text: answerText }) }),
   submitVote: (gameId: number, answerId: number) =>
