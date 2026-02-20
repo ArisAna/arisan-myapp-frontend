@@ -404,11 +404,47 @@ function AnsweringPhase({ gameId, round, userId, totalPlayers }: { gameId: numbe
       </div>
 
       {isQM ? (
-        <div className="text-center py-6">
-          <p className="text-gray-600">Περιμένεις απαντήσεις...</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {round.answered_count} / {totalPlayers - 1}
-          </p>
+        <div>
+          {/* Correct answer visible to QM immediately */}
+          {round.correct_answer && (
+            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3">
+              <p className="text-xs font-medium text-green-600 mb-0.5">Σωστή απάντηση</p>
+              <p className="font-semibold text-green-800">{round.correct_answer}</p>
+            </div>
+          )}
+
+          {/* Count */}
+          <div className="mb-3 text-center">
+            <p className="text-sm text-gray-500">Έχουν απαντήσει</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {round.answered_count} / {totalPlayers - 1}
+            </p>
+          </div>
+
+          {/* Who answered what */}
+          <div className="space-y-2">
+            {round.answers.map(a => (
+              <div
+                key={a.id}
+                className={`flex items-center justify-between rounded-lg border px-3 py-2.5 ${
+                  a.is_correct
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <span className="text-sm font-medium text-gray-700">{a.display_name}</span>
+                <span className={`text-sm ${a.is_correct ? 'font-semibold text-blue-700' : 'text-gray-600'}`}>
+                  {a.answer_text}{a.is_correct && ' ⚡'}
+                </span>
+              </div>
+            ))}
+            {/* Pending placeholders */}
+            {Array.from({ length: Math.max(0, (totalPlayers - 1) - round.answered_count) }).map((_, i) => (
+              <div key={`pending-${i}`} className="flex items-center rounded-lg border border-dashed border-gray-200 px-3 py-2.5">
+                <span className="text-sm text-gray-300 animate-pulse">Αναμένεται...</span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : round.my_answer ? (
         <div className="text-center py-6">
@@ -487,16 +523,52 @@ function VotingPhase({ gameId, round, userId, totalPlayers }: { gameId: number; 
       </div>
 
       {isQM ? (
-        <div className="text-center py-6">
-          <p className="text-gray-600">Οι παίκτες ψηφίζουν...</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {round.vote_count} / {totalPlayers - 1}
-          </p>
+        <div>
+          {/* Correct answer visible to QM */}
+          {round.correct_answer && (
+            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3">
+              <p className="text-xs font-medium text-green-600 mb-0.5">Σωστή απάντηση</p>
+              <p className="font-semibold text-green-800">{round.correct_answer}</p>
+            </div>
+          )}
+
+          {/* Vote count */}
+          <div className="mb-3 text-center">
+            <p className="text-sm text-gray-500">Έχουν ψηφίσει</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {round.vote_count} / {totalPlayers - 1}
+            </p>
+          </div>
+
+          {/* Who wrote what */}
+          <div className="space-y-2">
+            {round.answers.map(a => (
+              <div
+                key={a.id}
+                className={`flex items-center justify-between rounded-lg border px-3 py-2.5 ${
+                  a.is_correct
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <span className="text-sm font-medium text-gray-700">{a.display_name}</span>
+                <span className={`text-sm ${a.is_correct ? 'font-semibold text-blue-700' : 'text-gray-600'}`}>
+                  {a.answer_text}{a.is_correct && ' ⚡'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : round.my_vote ? (
         <div className="text-center py-6">
           <div className="text-3xl mb-2">🗳️</div>
-          <p className="text-gray-600">Ψήφισες!</p>
+          <p className="text-gray-600 font-medium">Ψήφισες!</p>
+          {round.my_answer && (
+            <p className="mt-2 text-sm text-gray-500">
+              Η απάντησή σου:{' '}
+              <span className="font-semibold text-gray-700">&quot;{round.my_answer}&quot;</span>
+            </p>
+          )}
           <p className="text-sm text-gray-400 mt-1">
             Περιμένεις τους άλλους... ({round.vote_count}/{totalPlayers - 1})
           </p>
