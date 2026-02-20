@@ -75,4 +75,16 @@ export const api = {
   joinGame: (id: number) => fetchAPI(`/games/${id}/join`, { method: 'POST' }),
   leaveGame: (id: number) => fetchAPI(`/games/${id}/leave`, { method: 'POST' }),
   startGame: (id: number) => fetchAPI(`/games/${id}/start`, { method: 'POST' }),
+
+  // Gameplay
+  getRound: (gameId: number) => fetchAPI(`/games/${gameId}/round`),
+  getAvailableQuestions: (gameId: number) => fetchAPI(`/games/${gameId}/available-questions`),
+  pickQuestion: (gameId: number, questionId: number) =>
+    fetchAPI(`/games/${gameId}/pick-question`, { method: 'POST', body: JSON.stringify({ question_id: questionId }) }),
+  submitAnswer: (gameId: number, answerText: string) =>
+    fetchAPI(`/games/${gameId}/answer`, { method: 'POST', body: JSON.stringify({ answer_text: answerText }) }),
+  submitVote: (gameId: number, answerId: number) =>
+    fetchAPI(`/games/${gameId}/vote`, { method: 'POST', body: JSON.stringify({ answer_id: answerId }) }),
+  nextRound: (gameId: number) =>
+    fetchAPI(`/games/${gameId}/next-round`, { method: 'POST' }),
 };
